@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harada Chart</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- Toolbar: primary and secondary import actions -->
+    <nav class="page-nav">
+      <button class="btn-paste-blueprint" id="btn-paste-blueprint">New Blueprint</button>
+      <button class="btn-import" id="btn-import">Import CSV</button>
+      <input type="file" id="csv-file-input" accept=".csv,text/csv" hidden />
+      <span class="page-nav__sep"></span>
+      <button class="btn-print-mode" id="btn-print-mode">Print Preview</button>
+      <button class="btn-save-pdf" id="btn-save-pdf">Save as PDF</button>
+    </nav>
+
+    <!-- Paste Blueprint modal -->
+    <div class="bp-modal" id="bp-modal" hidden aria-modal="true" role="dialog" aria-labelledby="bp-modal-title">
+      <div class="bp-modal__backdrop" id="bp-backdrop"></div>
+      <div class="bp-modal__card">
+        <h2 class="bp-modal__title" id="bp-modal-title">Paste Blueprint</h2>
+        <textarea
+          class="bp-textarea"
+          id="bp-textarea"
+          rows="18"
+          spellcheck="false"
+        ></textarea>
+        <div class="bp-modal__errors" id="bp-errors" hidden></div>
+        <div class="bp-modal__actions">
+          <button class="btn-secondary" id="btn-bp-cancel">Cancel</button>
+          <button class="btn-primary"   id="btn-bp-generate">Generate Chart</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation warnings appear here when data has recoverable issues -->
+    <ul id="chart-warnings" class="chart-warnings" hidden></ul>
+
+    <!-- Blueprint title — visible only in Print Mode -->
+    <div class="print-title" id="print-title">
+      <span id="print-title-text"></span>
+    </div>
+
+    <!-- The renderer mounts the chart here -->
+    <main id="chart-root" class="chart-root"></main>
+
+  </div>
+
+  <!-- Print bar — visible only in Print Mode, hidden when the browser prints -->
+  <div class="print-bar" id="print-bar">
+    <button class="btn-back-edit" id="btn-back-to-edit">← Back to Editing</button>
+    <span class="print-bar__hint">Set <strong>Landscape</strong> orientation in the print dialog</span>
+    <button class="btn-print-pdf" id="btn-print-pdf">Save as PDF / Print</button>
+  </div>
+
+  <!--
+    type="module" enables ES module imports in src/*.js.
+    The page must be served via a local web server for fetch() to work.
+    See README.md for quick-start instructions.
+  -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

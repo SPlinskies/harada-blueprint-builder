@@ -1,0 +1,758 @@
+/* ================================================================
+   styles.css — Harada Chart rendering engine
+   ================================================================
+
+   All visual values flow through CSS custom properties (design tokens).
+   To create a new visual theme, override variables on :root or on a
+   scoped selector — the renderer and JS files never need to change.
+
+   Structure:
+     1. Design tokens (:root)
+     2. Reset
+     3. Page layout
+     4. Warnings & errors
+     5. Chart outer grid  (.harada-chart)
+     6. Block inner grid  (.harada-block)
+     7. Cell              (.harada-cell)
+     8. Cell text         (.harada-cell__text)
+     9. Role variants     (pillar, main-goal, empty)
+    10. Future-expansion hooks
+    11. Print styles
+   ================================================================ */
+
+
+/* ── 1. Design tokens ───────────────────────────────────────────── */
+:root {
+
+  /* ── Spacing ── */
+  --page-margin:        8px;    /* breathing room between chart and viewport edge */
+  --chart-border-width: 4px;    /* outer chart border thickness                   */
+  --block-gap:          8px;    /* separator between the nine 3×3 blocks          */
+  --cell-gap:           2px;    /* separator between cells within a block         */
+  --cell-padding:       6px;    /* internal padding inside every cell             */
+
+  /*
+   * ── Responsive cell size ──
+   *
+   * The cell is the fundamental unit. Everything else derives from it.
+   *
+   * Formula: the chart uses 9 cells per axis plus fixed structural overhead.
+   *
+   *   Horizontal overhead:
+   *     2 × chart-border-width  +  2 × block-gap (padding frame)
+   *     + 2 × block-gap (2 gaps between 3 blocks)
+   *     + 6 × cell-gap  (2 gaps per block × 3 blocks)
+   *     = 2×4 + 2×8 + 2×8 + 6×2 = 8+16+16+12 = 52px
+   *
+   *   Target: fill 98% of the shorter viewport dimension.
+   *
+   *   cell-size = (0.98 × vmin - overhead) / 9
+   *   Equivalent: min over both axes so the chart always fits on screen.
+   */
+  --_overhead: 52px;   /* internal — do not override */
+
+  /*
+   * Cell size accounts for the page-nav toolbar (≈36px) and an 8px gap
+   * between the nav and the chart, plus 2×8px page margins.
+   *
+   * Horizontal non-chart space: 2×8px margins + 52px chart overhead = 68px
+   * Vertical   non-chart space: 2×8px margins + 36px nav + 8px gap
+   *                             + 52px chart overhead                = 112px
+   */
+  --cell-size: min(
+    calc((100vw - 68px)  / 9),
+    calc((100vh - 112px) / 9)
+  );
+
+  /* ── Typography ── */
+  --font-family:        system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-size-action:   calc(var(--cell-size) * 0.13);   /* scales with cell  */
+  --font-size-label:    calc(var(--cell-size) * 0.145);  /* scales with cell  */
+  --font-weight-action: 400;
+  --font-weight-label:  700;
+  --line-height-cell:   1.25;
+
+  /* ── Colours ── */
+  --color-page-bg:          #e8e8e8;
+  --color-chart-border:     #222222;   /* prominent outer border          */
+  --color-block-separator:  #4a4a4a;   /* between the nine 3×3 sections   */
+  --color-cell-separator:   #aaaaaa;   /* between cells inside a block    */
+  --color-cell-bg:          #ffffff;
+  --color-cell-empty-bg:    #f7f7f7;
+  --color-text-default:     #1a1a1a;
+
+  /* ── Feedback ── */
+  --color-warning-bg:     #fff8e1;
+  --color-warning-border: #f9a825;
+  --color-warning-text:   #5d4037;
+  --color-error-bg:       #fce4ec;
+  --color-error-border:   #e91e63;
+  --color-error-text:     #880e4f;
+}
+
+
+/* ── 2. Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* ── 3. Page layout ─────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+}
+
+body {
+  background:      var(--color-page-bg);
+  font-family:     var(--font-family);
+  color:           var(--color-text-default);
+  min-height:      100vh;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.page {
+  padding:        var(--page-margin);
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  width:          100%;
+}
+
+/* ── Page navigation (Import CSV toolbar) ───────────────────────── */
+.page-nav {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  width:       100%;
+  max-width:   max-content;
+}
+
+/* Visual divider between import tools and print tools */
+.page-nav__sep {
+  width:      1px;
+  height:     22px;
+  background: #cccccc;
+  flex-shrink: 0;
+  margin:     0 2px;
+}
+
+.btn-paste-blueprint {
+  display:         inline-flex;
+  align-items:     center;
+  padding:         7px 18px;
+  height:          36px;
+  background:      var(--color-chart-border);
+  color:           #ffffff;
+  border:          1.5px solid var(--color-chart-border);
+  border-radius:   6px;
+  font-family:     var(--font-family);
+  font-size:       13px;
+  font-weight:     600;
+  cursor:          pointer;
+  white-space:     nowrap;
+  transition:      background 0.1s, border-color 0.1s;
+  user-select:     none;
+}
+
+.btn-paste-blueprint:hover  { background: #111111; border-color: #111111; }
+.btn-paste-blueprint:active { background: #000000; border-color: #000000; }
+
+.btn-import {
+  display:         inline-flex;
+  align-items:     center;
+  padding:         7px 18px;
+  height:          36px;
+  background:      #ffffff;
+  color:           var(--color-text-default);
+  border:          1.5px solid var(--color-block-separator);
+  border-radius:   6px;
+  font-family:     var(--font-family);
+  font-size:       13px;
+  font-weight:     500;
+  cursor:          pointer;
+  white-space:     nowrap;
+  transition:      background 0.1s, border-color 0.1s;
+  user-select:     none;
+}
+
+.btn-import:hover   { background: #f0f0f0; border-color: var(--color-chart-border); }
+.btn-import:active  { background: #e6e6e6; }
+.btn-import:disabled {
+  opacity: 0.55;
+  cursor:  not-allowed;
+}
+
+/* ── 4a. Blueprint modal ────────────────────────────────────────── */
+.bp-modal {
+  position:        fixed;
+  inset:           0;
+  z-index:         200;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.bp-modal[hidden] { display: none; }
+
+.bp-modal__backdrop {
+  position:   absolute;
+  inset:      0;
+  background: rgba(0, 0, 0, 0.52);
+}
+
+.bp-modal__card {
+  position:        relative;
+  background:      #ffffff;
+  border-radius:   10px;
+  padding:         28px;
+  width:           min(680px, 92vw);
+  max-height:      90vh;
+  display:         flex;
+  flex-direction:  column;
+  gap:             14px;
+  box-shadow:      0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow:        hidden;
+}
+
+.bp-modal__title {
+  font-size:   17px;
+  font-weight: 600;
+  color:       var(--color-text-default);
+  flex-shrink: 0;
+}
+
+.bp-textarea {
+  width:       100%;
+  flex:        1;
+  min-height:  360px;
+  resize:      vertical;
+  padding:     12px 14px;
+  font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+  font-size:   12.5px;
+  line-height: 1.65;
+  color:       var(--color-text-default);
+  background:  #fafafa;
+  border:      1.5px solid #d0d0d0;
+  border-radius: 6px;
+  outline:     none;
+  transition:  border-color 0.1s;
+}
+
+.bp-textarea:focus { border-color: var(--color-chart-border); background: #ffffff; }
+
+.bp-modal__errors {
+  background:    var(--color-error-bg);
+  border:        1px solid var(--color-error-border);
+  color:         var(--color-error-text);
+  border-radius: 6px;
+  padding:       10px 14px;
+  font-size:     13px;
+  line-height:   1.5;
+  flex-shrink:   0;
+}
+
+.bp-modal__errors[hidden] { display: none; }
+
+.bp-modal__actions {
+  display:         flex;
+  justify-content: flex-end;
+  gap:             10px;
+  flex-shrink:     0;
+}
+
+/* Shared button primitives (used by modal) */
+.btn-primary {
+  padding:       8px 22px;
+  background:    var(--color-chart-border);
+  color:         #ffffff;
+  border:        none;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    background 0.1s;
+}
+.btn-primary:hover   { background: #111111; }
+.btn-primary:active  { background: #000000; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  padding:       8px 18px;
+  background:    transparent;
+  color:         var(--color-text-default);
+  border:        1.5px solid #cccccc;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    background 0.1s, border-color 0.1s;
+}
+.btn-secondary:hover  { background: #f5f5f5; border-color: #aaaaaa; }
+.btn-secondary:active { background: #ebebeb; }
+
+@media print {
+  .bp-modal { display: none !important; }
+}
+
+/* ── 4. Warnings & errors ───────────────────────────────────────── */
+.chart-warnings {
+  list-style:    none;
+  background:    var(--color-warning-bg);
+  border:        1px solid var(--color-warning-border);
+  color:         var(--color-warning-text);
+  border-radius: 6px;
+  padding:       12px 16px;
+  max-width:     960px;
+  width:         100%;
+  font-size:     14px;
+  line-height:   1.5;
+}
+
+.chart-warnings li + li { margin-top: 4px; }
+.chart-warnings li::before { content: '⚠ '; font-weight: 700; }
+.chart-warnings__error { color: var(--color-error-text); }
+.chart-warnings__error::before { content: '✕ '; }
+
+.harada-error {
+  background:    var(--color-error-bg);
+  border:        1px solid var(--color-error-border);
+  color:         var(--color-error-text);
+  border-radius: 6px;
+  padding:       20px 24px;
+  max-width:     700px;
+  width:         100%;
+}
+
+.harada-error pre {
+  white-space: pre-wrap;
+  font-family: var(--font-family);
+  font-size:   13px;
+  line-height: 1.6;
+}
+
+/* Chart root — centers the chart and enables horizontal scroll on
+   very small screens where the chart still exceeds the viewport.   */
+.chart-root {
+  display:         flex;
+  justify-content: center;
+  align-items:     center;
+  width:           100%;
+  overflow-x:      auto;
+}
+
+
+/* ── 5. Harada chart — outer 3×3 grid ──────────────────────────── */
+/*
+ * Visual structure:
+ *
+ *   [chart border — chart-border-width of color-chart-border]
+ *   [block-gap frame — same color as block separators]
+ *   [blocks separated by block-gap of color-block-separator]
+ *   [cells separated by cell-gap of color-cell-separator]
+ *
+ * The "padding: block-gap" creates a visual frame around the outer
+ * blocks that is the same width and colour as the inner separators,
+ * giving the chart a clean, unified border treatment.
+ */
+.harada-chart {
+  display:               grid;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows:    repeat(3, auto);
+  gap:                   var(--block-gap);
+  padding:               var(--block-gap);
+  background:            var(--color-block-separator);
+  border:                var(--chart-border-width) solid var(--color-chart-border);
+  box-shadow:            0 6px 32px rgba(0, 0, 0, 0.22);
+}
+
+
+/* ── 6. Block — inner 3×3 grid ─────────────────────────────────── */
+.harada-block {
+  display:               grid;
+  grid-template-columns: repeat(3, var(--cell-size));
+  grid-template-rows:    repeat(3, var(--cell-size));
+  gap:                   var(--cell-gap);
+  background:            var(--color-cell-separator);
+}
+
+
+/* ── 7. Cell ────────────────────────────────────────────────────── */
+.harada-cell {
+  background:      var(--color-cell-bg);
+  color:           var(--color-text-default);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         var(--cell-padding);
+  overflow:        hidden;
+  position:        relative;
+}
+
+.harada-cell--empty {
+  background: var(--color-cell-empty-bg);
+}
+
+
+/* ── 8. Cell text ───────────────────────────────────────────────── */
+/*
+ * font-size starts at the CSS-calculated value and is reduced by the
+ * canvas-based fitting algorithm in renderer.js if the text is too
+ * long to fit at that size. The CSS value is always the ceiling.
+ */
+.harada-cell__text {
+  display:       block;
+  width:         100%;
+  text-align:    center;
+  line-height:   var(--line-height-cell);
+  font-size:     var(--font-size-action);
+  font-weight:   var(--font-weight-action);
+  overflow-wrap: break-word;
+  hyphens:       manual;
+}
+
+
+/* ── 9. Role variants ───────────────────────────────────────────── */
+.harada-cell--pillar .harada-cell__text {
+  font-size:   var(--font-size-label);
+  font-weight: var(--font-weight-label);
+}
+
+.harada-cell--main-goal .harada-cell__text {
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: 0.02em;
+}
+
+
+/* ── 10. Editing — inline cell editing ──────────────────────────── */
+
+/* All cells are now clickable / editable */
+.harada-cell { cursor: pointer; }
+
+/* Visual focus ring while a cell is being edited */
+.harada-cell[data-editing] {
+  cursor:         text;
+  outline:        2px solid rgba(59, 130, 246, 0.75);
+  outline-offset: -2px;
+  z-index:        1;
+}
+
+/*
+ * Inline edit textarea — fills the cell exactly (including padding).
+ * Uses position:absolute so it overlays the cell's padding area without
+ * shifting any layout. The cell already has position:relative.
+ */
+.cell-edit-input {
+  position:    absolute;
+  inset:       0;
+  padding:     var(--cell-padding);
+  border:      none;
+  outline:     none;
+  resize:      none;
+  background:  rgba(255, 255, 255, 0.12);
+  font-family: var(--font-family);
+  font-weight: inherit;
+  color:       inherit;
+  text-align:  center;
+  line-height: var(--line-height-cell);
+  cursor:      text;
+  box-sizing:  border-box;
+  overflow:    hidden;
+}
+
+/* "Add task…" placeholder on empty task cells */
+.harada-cell--empty[data-cell-type="task"] .harada-cell__text::after {
+  content:     'Add task…';
+  color:       var(--color-text-default);
+  opacity:     0.25;
+  font-size:   var(--font-size-action);
+  font-weight: var(--font-weight-action);
+}
+
+/* Suppress placeholder while the cell is being edited */
+.harada-cell[data-editing] .harada-cell__text::after {
+  display: none;
+}
+
+@media print {
+  .harada-cell { cursor: default; }
+  .harada-cell[data-editing] { outline: none; }
+}
+
+
+/* ── 11. Print Mode — browser preview state ─────────────────────── */
+/*
+ * Print Mode is activated by adding .print-mode to <body>.
+ * It is a pure CSS + JS view-state toggle — the renderer, data model,
+ * and inline editing are untouched.
+ *
+ * Layout in Print Mode (1440×900 example):
+ *   Body height: 100vh, padding-bottom: 52px (clears the fixed print bar).
+ *   Visible stack (in-flow): [title 36px] [gap 8px] [chart]
+ *   Vertical space for 9 cells: 100vh − bar(52) − title(36) − gap(8)
+ *                                       − page-pad(16) − chart-overhead(52) = 100vh − 164px
+ *   Horizontal space for 9 cells: 100vw − page-pad(16) − chart-overhead(52) = 100vw − 68px
+ */
+
+/* ── Print Mode button (nav) ── */
+.btn-print-mode {
+  display:       inline-flex;
+  align-items:   center;
+  padding:       7px 16px;
+  height:        36px;
+  background:    #ffffff;
+  color:         var(--color-text-default);
+  border:        1.5px solid #aaaaaa;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   500;
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background 0.1s, border-color 0.1s;
+  user-select:   none;
+}
+.btn-print-mode:hover  { background: #f5f5f5; border-color: #555555; }
+.btn-print-mode:active { background: #ebebeb; }
+
+/* "Save as PDF" nav button — primary action, filled */
+.btn-save-pdf {
+  display:       inline-flex;
+  align-items:   center;
+  padding:       7px 18px;
+  height:        36px;
+  background:    var(--color-chart-border);
+  color:         #ffffff;
+  border:        none;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   600;
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background 0.1s;
+  user-select:   none;
+}
+.btn-save-pdf:hover  { background: #111111; }
+.btn-save-pdf:active { background: #000000; }
+
+/* ── Blueprint title (only shown in Print Mode) ── */
+.print-title {
+  display:        none;
+  font-size:      16px;
+  font-weight:    700;
+  letter-spacing: 0.02em;
+  color:          var(--color-text-default);
+  text-align:     center;
+  flex-shrink:    0;
+}
+.print-title--no-content { display: none !important; }
+
+/* ── Print bar (only shown in Print Mode, hidden when printing) ── */
+.print-bar {
+  display:         none;
+  position:        fixed;
+  bottom:          0;
+  left:            0;
+  right:           0;
+  z-index:         400;
+  height:          52px;
+  align-items:     center;
+  justify-content: center;
+  gap:             16px;
+  background:      #ffffff;
+  border-top:      1px solid #d8d8d8;
+  box-shadow:      0 -2px 14px rgba(0, 0, 0, 0.07);
+}
+
+.print-bar__hint {
+  font-size:   12px;
+  color:       #666666;
+  white-space: nowrap;
+}
+
+.btn-back-edit {
+  padding:       8px 18px;
+  background:    transparent;
+  color:         var(--color-text-default);
+  border:        1.5px solid #cccccc;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    background 0.1s, border-color 0.1s;
+}
+.btn-back-edit:hover  { background: #f5f5f5; border-color: #aaaaaa; }
+.btn-back-edit:active { background: #ebebeb; }
+
+.btn-print-pdf {
+  padding:       8px 22px;
+  background:    var(--color-chart-border);
+  color:         #ffffff;
+  border:        none;
+  border-radius: 6px;
+  font-family:   var(--font-family);
+  font-size:     13px;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    background 0.1s;
+}
+.btn-print-pdf:hover  { background: #111111; }
+.btn-print-pdf:active { background: #000000; }
+
+/* ── body.print-mode overrides ── */
+body.print-mode {
+  height:          100vh;
+  overflow:        hidden;
+  background:      #ffffff;
+  padding-bottom:  52px;        /* clear the fixed print bar */
+
+  --cell-size: min(
+    calc((100vw - 68px)  / 9),  /* same horizontal math as edit mode */
+    calc((100vh - 164px) / 9)   /* bar 52 + title 36 + gap 8 + padding 16 + chart-overhead 52 */
+  );
+}
+
+/* Show print-specific elements */
+body.print-mode .print-bar   { display: flex; }
+body.print-mode .print-title { display: block; }
+
+/* Hide all edit-mode chrome */
+body.print-mode .page-nav,
+body.print-mode .chart-warnings,
+body.print-mode .bp-modal,
+body.print-mode .harada-error { display: none !important; }
+
+/* Remove interactive edit UX */
+body.print-mode .harada-cell              { cursor: default; }
+body.print-mode .harada-cell[data-editing] { outline: none; cursor: default; }
+body.print-mode .harada-cell--empty[data-cell-type="task"] .harada-cell__text::after { display: none; }
+
+/* Slightly cleaner chart look for print preview */
+body.print-mode .harada-chart {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
+}
+
+/* Page layout: only title + chart visible, centred */
+body.print-mode .page { gap: 8px; }
+
+
+/* ── 12. @media print — physical printing and Save PDF ─────────── */
+/*
+ * Targets A4 Landscape and US Letter Landscape.
+ * Margins 8mm, tighter gaps → more usable area for the chart.
+ *
+ * Overhead: 2×1mm border + 2×1.5mm block-gap frame + 2×1.5mm block-gap
+ *           + 6×0.3mm cell-gap = 9.8mm
+ *
+ * A4  Landscape: printable 281×194mm → with title (8mm): 186mm for chart
+ *   cell = (186 − 9.8) / 9 = 19.6mm → use 19mm (safe for both sizes)
+ * Letter Landscape: printable 263×200mm → 19mm also fits comfortably.
+ */
+@media print {
+
+  /*
+   * `size: landscape` (no paper name) tells Chrome to rotate to landscape
+   * while respecting whatever paper size the user has selected.
+   * Chrome honours orientation-only @page size directives more reliably
+   * than combined paper+orientation declarations like "A4 landscape".
+   */
+  @page {
+    size:   landscape;
+    margin: 8mm;
+  }
+
+  /* Override design tokens for print */
+  :root {
+    --chart-border-width:    1mm;
+    --block-gap:             1.5mm;
+    --cell-gap:              0.3mm;
+    --cell-padding:          1.8mm;
+    --cell-size:             19mm;    /* fills ~93% of A4 landscape height */
+    --font-size-action:      7pt;
+    --font-size-label:       8pt;
+    --color-block-separator: #333333;
+    --color-cell-separator:  #d4d4d4;
+    --color-cell-empty-bg:   #ffffff;
+  }
+
+  /* Full-page flex layout: centers the chart vertically and horizontally */
+  html {
+    height:     100%;
+    background: white;
+    padding:    0;
+    margin:     0;
+  }
+
+  body {
+    height:          100%;
+    background:      white;
+    padding:         0;
+    margin:          0;
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+  }
+
+  .page {
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    padding:         0;
+    gap:             4mm;
+    flex:            1;
+    width:           100%;
+  }
+
+  /* Hide everything except chart and optional title */
+  .page-nav,
+  .chart-warnings,
+  .harada-error,
+  .bp-modal,
+  .print-bar,
+  .cell-edit-input { display: none !important; }
+
+  /* Show blueprint title if present */
+  .print-title {
+    display:     block;
+    font-size:   10pt;
+    font-weight: 700;
+    text-align:  center;
+    color:       #000000;
+  }
+  .print-title--no-content { display: none !important; }
+
+  /* Suppress edit placeholders and cursor */
+  .harada-cell { cursor: default; }
+  .harada-cell--empty[data-cell-type="task"] .harada-cell__text::after { display: none; }
+
+  .chart-root {
+    display:         flex;
+    justify-content: center;
+    overflow:        visible;
+  }
+
+  /* Preserve colours; prevent page breaks inside the chart */
+  .harada-chart {
+    box-shadow:                  none;
+    print-color-adjust:          exact;
+    -webkit-print-color-adjust:  exact;
+    break-inside:                avoid;
+    page-break-inside:           avoid;
+  }
+
+  .harada-cell {
+    print-color-adjust:         exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

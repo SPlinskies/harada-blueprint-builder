@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "title": "Becoming a Successful Adult",
+    "author": "",
+    "version": "1.0"
+  },
+  "mainGoal": {
+    "text": "Become a successful adult",
+    "backgroundColor": "#e63946",
+    "textColor": "#ffffff"
+  },
+  "pillars": [
+    {
+      "position": "NW",
+      "text": "Future Building",
+      "backgroundColor": "#2d6a4f",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Try new experiences" },
+        { "position": "TC", "text": "Set goals" },
+        { "position": "TR", "text": "Build a network" },
+        { "position": "ML", "text": "Travel when possible" },
+        { "position": "MR", "text": "Develop hobbies" },
+        { "position": "BL", "text": "Explore careers" },
+        { "position": "BC", "text": "Take healthy risks" },
+        { "position": "BR", "text": "Volunteer" }
+      ]
+    },
+    {
+      "position": "N",
+      "text": "Take care of your body",
+      "backgroundColor": "#4361ee",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Manage stress" },
+        { "position": "TC", "text": "Sleep 8 hours" },
+        { "position": "TR", "text": "Exercise 3x/week" },
+        { "position": "ML", "text": "Limit junk food" },
+        { "position": "MR", "text": "Learn to cook 5 meals" },
+        { "position": "BL", "text": "Attend medical appointments" },
+        { "position": "BC", "text": "Go outside daily" },
+        { "position": "BR", "text": "Drink water" }
+      ]
+    },
+    {
+      "position": "NE",
+      "text": "Manage your Money",
+      "backgroundColor": "#2aab74",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Create a budget" },
+        { "position": "TC", "text": "Save 10% of income" },
+        { "position": "TR", "text": "Learn how credit works" },
+        { "position": "ML", "text": "Avoid consumer debt" },
+        { "position": "MR", "text": "Track spending" },
+        { "position": "BL", "text": "Understand taxes" },
+        { "position": "BC", "text": "Build an emergency fund" },
+        { "position": "BR", "text": "Learn investing basics" }
+      ]
+    },
+    {
+      "position": "W",
+      "text": "Character",
+      "backgroundColor": "#b5835a",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Discipline" },
+        { "position": "TC", "text": "Gratitude" },
+        { "position": "TR", "text": "Respect" },
+        { "position": "ML", "text": "Courage" },
+        { "position": "MR", "text": "Resilience" },
+        { "position": "BL", "text": "Honesty" },
+        { "position": "BC", "text": "Humility" },
+        { "position": "BR", "text": "Integrity" }
+      ]
+    },
+    {
+      "position": "E",
+      "text": "Learn how to Learn",
+      "backgroundColor": "#00b4d8",
+      "textColor": "#000000",
+      "actions": [
+        { "position": "TL", "text": "Read regularly" },
+        { "position": "TC", "text": "Ask questions" },
+        { "position": "TR", "text": "Develop curiosity" },
+        { "position": "ML", "text": "Learn from mistakes" },
+        { "position": "MR", "text": "Take courses" },
+        { "position": "BL", "text": "Seek mentors" },
+        { "position": "BC", "text": "Practice critical thinking" },
+        { "position": "BR", "text": "Learn new skills" }
+      ]
+    },
+    {
+      "position": "SW",
+      "text": "Life Skills",
+      "backgroundColor": "#f4b400",
+      "textColor": "#000000",
+      "actions": [
+        { "position": "TL", "text": "Time management" },
+        { "position": "TC", "text": "First aid basics" },
+        { "position": "TR", "text": "Basic cleaning" },
+        { "position": "ML", "text": "Calendar management" },
+        { "position": "MR", "text": "Laundry" },
+        { "position": "BL", "text": "Job interview skills" },
+        { "position": "BC", "text": "Basic car/home knowledge" },
+        { "position": "BR", "text": "Grocery shop & Meal Prep" }
+      ]
+    },
+    {
+      "position": "S",
+      "text": "Take Responsibility",
+      "backgroundColor": "#f77f00",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Finish what you start" },
+        { "position": "TC", "text": "Be accountable" },
+        { "position": "TR", "text": "Show up on time" },
+        { "position": "ML", "text": "Ask for help when needed" },
+        { "position": "MR", "text": "Clean up after yourself" },
+        { "position": "BL", "text": "Solve problems" },
+        { "position": "BC", "text": "Admit mistakes" },
+        { "position": "BR", "text": "Do what you said you'd do" }
+      ]
+    },
+    {
+      "position": "SE",
+      "text": "Build strong relationships",
+      "backgroundColor": "#cc00cc",
+      "textColor": "#ffffff",
+      "actions": [
+        { "position": "TL", "text": "Be kind" },
+        { "position": "TC", "text": "Keep your word" },
+        { "position": "TR", "text": "Communicate honestly" },
+        { "position": "ML", "text": "Learn conflict resolution" },
+        { "position": "MR", "text": "Practice listening" },
+        { "position": "BL", "text": "Spend time with family" },
+        { "position": "BC", "text": "Respect boundaries" },
+        { "position": "BR", "text": "Choose good friends" }
+      ]
+    }
+  ]
+}

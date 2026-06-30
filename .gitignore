@@ -1,0 +1,9 @@
+# Claude Code dev tooling — not part of the app
+.claude/
+
+# macOS
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
