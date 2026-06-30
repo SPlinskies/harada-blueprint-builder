@@ -645,7 +645,66 @@ body.print-mode .harada-chart {
 body.print-mode .page { gap: 8px; }
 
 
-/* ── 12. @media print — physical printing and Save PDF ─────────── */
+/* ── 12. Mobile responsive ──────────────────────────────────────── */
+@media (max-width: 600px) {
+
+  /* Don't vertically center on mobile — chart goes to the top */
+  body {
+    align-items: flex-start;
+  }
+
+  /* Wrap nav buttons onto two rows and shrink them */
+  .page-nav {
+    flex-wrap:      wrap;
+    justify-content: center;
+    gap:            8px;
+  }
+
+  .page-nav__sep { display: none; }
+
+  .btn-paste-blueprint,
+  .btn-import,
+  .btn-print-mode,
+  .btn-save-pdf {
+    padding:   6px 12px;
+    font-size: 12px;
+    height:    32px;
+  }
+
+  /* Recalculate cell size: nav now takes ~72px (two rows of 32px + gaps) */
+  :root {
+    --cell-size: min(
+      calc((100vw - 68px) / 9),
+      calc((100vh - 152px) / 9)
+    );
+  }
+
+  /* Modal: full-width on mobile, smaller padding */
+  .bp-modal__card {
+    width:   95vw;
+    padding: 16px;
+    gap:     10px;
+  }
+
+  .bp-textarea { min-height: 260px; }
+
+  /* Print bar: stack hint onto its own line */
+  .print-bar {
+    flex-wrap: wrap;
+    height:    auto;
+    padding:   10px 16px;
+    gap:       8px;
+  }
+
+  .print-bar__hint {
+    width:      100%;
+    text-align: center;
+    order:      -1;
+  }
+}
+
+
+/* ── 13. @media print — physical printing and Save PDF ─────────── */
 /*
  * Targets A4 Landscape and US Letter Landscape.
  * Margins 8mm, tighter gaps → more usable area for the chart.
