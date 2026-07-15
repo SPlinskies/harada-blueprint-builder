@@ -13,7 +13,6 @@ import { validate }         from './validator.js';
 import { importCSV }        from './csv-importer.js';
 import { parseBlueprint }   from './blueprint-parser.js';
 import { DEFAULT_PILLAR_COLORS, DEFAULT_MAIN_GOAL_COLOR } from './utils.js';
-import { toPng }            from 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/es/index.js';
 
 // ── Module state ───────────────────────────────────────────────────
 let currentData = null;
@@ -65,7 +64,6 @@ async function init() {
   setupBlueprintModal();
   setupImportButton();
   setupPrintMode();
-  setupPngExport();
 }
 
 // ── Chart load / re-render ─────────────────────────────────────────
@@ -381,48 +379,6 @@ function enterPrintMode() {
 
 function exitPrintMode() {
   document.body.classList.remove('print-mode');
-}
-
-// ── PNG Export ─────────────────────────────────────────────────────
-
-function setupPngExport() {
-  const btn = document.getElementById('btn-download-png');
-  if (!btn) return;
-
-  btn.addEventListener('click', async () => {
-    if (!chartRoot || !chartRoot.firstElementChild) return;
-
-    const originalLabel = btn.textContent;
-    btn.textContent = 'Creating PNG…';
-    btn.disabled    = true;
-
-    try {
-      const chart = chartRoot.querySelector('.harada-chart');
-      if (!chart) throw new Error('Chart element not found.');
-
-      const dataUrl = await toPng(chart, {
-        scale:           3,
-        backgroundColor: '#ffffff',
-        // Match the chart's rendered size exactly — no extra whitespace
-        width:  chart.offsetWidth,
-        height: chart.offsetHeight,
-      });
-
-      const raw      = getTitle() || 'harada-blueprint';
-      const filename = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png';
-
-      const a    = document.createElement('a');
-      a.href     = dataUrl;
-      a.download = filename;
-      a.click();
-    } catch (err) {
-      // Show the error in the existing warning banner so it's visible without an alert()
-      showWarningBanner([], [`PNG export failed: ${err.message}`]);
-    } finally {
-      btn.textContent = originalLabel;
-      btn.disabled    = false;
-    }
-  });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────

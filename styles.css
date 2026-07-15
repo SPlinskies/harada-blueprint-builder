@@ -413,9 +413,8 @@ body {
   line-height:   var(--line-height-cell);
   font-size:     var(--font-size-action);
   font-weight:   var(--font-weight-action);
-  overflow-wrap: normal;
-  word-break:    normal;
-  hyphens:       none;
+  overflow-wrap: break-word;
+  hyphens:       manual;
 }
 
 
@@ -544,27 +543,6 @@ body {
 .btn-save-pdf:hover  { background: #111111; }
 .btn-save-pdf:active { background: #000000; }
 
-.btn-download-png {
-  display:       inline-flex;
-  align-items:   center;
-  padding:       7px 18px;
-  height:        36px;
-  background:    #1a6b3c;
-  color:         #ffffff;
-  border:        none;
-  border-radius: 6px;
-  font-family:   var(--font-family);
-  font-size:     13px;
-  font-weight:   600;
-  cursor:        pointer;
-  white-space:   nowrap;
-  transition:    background 0.1s;
-  user-select:   none;
-}
-.btn-download-png:hover    { background: #155730; }
-.btn-download-png:active   { background: #0f3f22; }
-.btn-download-png:disabled { opacity: 0.6; cursor: not-allowed; }
-
 /* ── Blueprint title (only shown in Print Mode) ── */
 .print-title {
   display:        none;
@@ -687,8 +665,7 @@ body.print-mode .page { gap: 8px; }
   .btn-paste-blueprint,
   .btn-import,
   .btn-print-mode,
-  .btn-save-pdf,
-  .btn-download-png {
+  .btn-save-pdf {
     padding:   6px 12px;
     font-size: 12px;
     height:    32px;
@@ -696,11 +673,10 @@ body.print-mode .page { gap: 8px; }
 
   /* Recalculate cell size: nav now takes ~72px (two rows of 32px + gaps) */
   :root {
-    --cell-size:    min(
+    --cell-size: min(
       calc((100vw - 68px) / 9),
       calc((100vh - 152px) / 9)
     );
-    --cell-padding: 3px;   /* tighter padding gives text more room on small cells */
   }
 
   /* Modal: full-width on mobile, smaller padding */
