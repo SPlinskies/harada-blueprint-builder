@@ -63,7 +63,9 @@ export function fitText(span, maxW, maxH, { minSize = 7, maxLines = Infinity, li
   const cs         = getComputedStyle(span);
   const fontWeight = cs.fontWeight;
   const fontFamily = cs.fontFamily;
-  let   size       = parseFloat(cs.fontSize);
+  // Start from the larger of the computed size and minSize so the fitter
+  // always attempts to fit even when the CSS variable resolves below the floor.
+  let   size       = Math.max(parseFloat(cs.fontSize), minSize);
 
   const ruler = getRuler(fontFamily);
   const words = text.split(/\s+/);
@@ -77,20 +79,24 @@ export function fitText(span, maxW, maxH, { minSize = 7, maxLines = Infinity, li
 
   const maxWordWidth = (sz) => Math.max(...words.map((w) => measure(w, sz)));
 
+  // 3px safety margin compensates for subpixel differences between the ruler
+  // and the actual cell, preventing clipping when overflow-wrap:normal is set.
+  const safeW = maxW - 3;
+
   const lineCount = (sz) => {
     const spW = measure(' ', sz);
     let lines = 1, lineW = 0;
     words.forEach((word, i) => {
       const wW = measure(word, sz);
       if (i === 0) { lineW = wW; return; }
-      if (lineW + spW + wW <= maxW) { lineW += spW + wW; }
-      else                          { lines++;  lineW = wW; }
+      if (lineW + spW + wW <= safeW) { lineW += spW + wW; }
+      else                           { lines++;  lineW = wW; }
     });
     return lines;
   };
 
   // Phase 1 — fit the longest word horizontally (prevents mid-word breaks).
-  while (size > minSize && maxWordWidth(size) > maxW) size -= 0.5;
+  while (size > minSize && maxWordWidth(size) > safeW) size -= 0.5;
 
   // Phase 2 — fit all wrapped lines within maxH and the maxLines constraint.
   while (size > minSize) {
@@ -100,4 +106,13 @@ export function fitText(span, maxW, maxH, { minSize = 7, maxLines = Infinity, li
   }
 
   span.style.fontSize = `${size}px`;
+
+  // Last resort: if the longest word still overflows at minSize (common on
+  // very small cells like mobile), allow the browser to break the word rather
+  // than clip it. This is the only situation where mid-word wrapping is used.
+  if (maxWordWidth(size) > safeW) {
+    span.style.overflowWrap = 'break-word';
+  } else {
+    span.style.overflowWrap = '';
+  }
 }
