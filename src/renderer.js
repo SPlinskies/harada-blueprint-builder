@@ -259,7 +259,10 @@ export class HaradaRenderer {
       const isLabel = cell.classList.contains('harada-cell--pillar') ||
                       cell.classList.contains('harada-cell--main-goal');
 
-      fitText(span, maxW, maxH, isLabel ? { maxLines: 3 } : {});
+      // minSize: 4 lets the fitter go small enough for long words in tiny cells
+      // (e.g. "Responsibility" in a 27px cell on mobile). Unreadably-small text
+      // is better than clipped text.
+      fitText(span, maxW, maxH, isLabel ? { maxLines: 3, minSize: 4 } : { minSize: 4 });
     });
   }
 }
