@@ -13,7 +13,7 @@ import { validate }         from './validator.js';
 import { importCSV }        from './csv-importer.js';
 import { parseBlueprint }   from './blueprint-parser.js';
 import { DEFAULT_PILLAR_COLORS, DEFAULT_MAIN_GOAL_COLOR } from './utils.js';
-import { toPng }            from 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/es/index.js';
+import { toPng }            from 'https://esm.sh/html-to-image@1.11.11';
 
 // ── Module state ───────────────────────────────────────────────────
 let currentData = null;
